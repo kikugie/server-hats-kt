@@ -3,9 +3,10 @@
   "id": "${id}",
   "version": "${version}",
   "name": "${name}",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "description": "Adds server-side hats!",
   "authors": [
-    "Me!"
+    "WerDei",
+    "KikuGie"
   ],
   "contact": {
     "homepage": "https://fabricmc.net/",
@@ -16,22 +17,18 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.example.TemplateMod"
-    ],
-    "client": [
-      "com.example.TemplateModClient"
+      {
+        "adapter": "kotlin",
+        "value": "dev.kikugie.serverhats.HatsMod"
+      }
     ]
   },
   "mixins": [
-    "template.mixins.json",
-    {
-      "config": "template.client.mixins.json",
-      "environment": "client"
-    }
+    "hatsmod.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.15",
-    "minecraft": "${mcdep}",
-    "fabric-api": "*"
-  }
+    "minecraft": "${mcdep}"
+  },
+  "accessWidener": "hatsmod.accesswidener"
 }

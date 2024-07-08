@@ -1,8 +1,8 @@
 plugins {
     `maven-publish`
-    id("fabric-loom")
-    //id("dev.kikugie.j52j")
-    //id("me.modmuss50.mod-publish-plugin")
+    kotlin("jvm") version "2.0.0"
+    kotlin("plugin.serialization") version "2.0.0"
+    id("fabric-loom") version "1.7-SNAPSHOT"
 }
 
 class ModData {
@@ -18,25 +18,14 @@ class ModDependencies {
 
 val mod = ModData()
 val deps = ModDependencies()
-val mcVersion = stonecutter.current.version
-val mcDep = property("mod.mc_dep").toString()
+val mcVersion = deps["mc"]
 
-version = "${mod.version}+$mcVersion"
+version = mod.version
 group = mod.group
 base { archivesName.set(mod.id) }
 
-loom {
-    splitEnvironmentSourceSets()
-
-    mods {
-        create("template") {
-            sourceSet(sourceSets["main"])
-            sourceSet(sourceSets["client"])
-        }
-    }
-}
-
 repositories {
+    mavenCentral()
     exclusiveContent {
         forRepository { maven("https://www.cursemaven.com") { name = "CurseForge" } }
         filter { includeGroup("curse.maven") }
@@ -53,109 +42,45 @@ dependencies {
     }
 
     minecraft("com.mojang:minecraft:${mcVersion}")
-    mappings("net.fabricmc:yarn:${mcVersion}+build.${deps["yarn_build"]}:v2")
+    mappings(loom.officialMojangMappings())
+//    mappings("net.fabricmc:yarn:${mcVersion}+build.${deps["yarn_build"]}:v2")
     modImplementation("net.fabricmc:fabric-loader:${deps["fabric_loader"]}")
+    modImplementation("net.fabricmc:fabric-language-kotlin:${deps["flk"]}")
 
-    modLocalRuntime("net.fabricmc.fabric-api:fabric-api:${deps["fabric_api"]}")
-    vineflowerDecompilerClasspath("org.vineflower:vineflower:1.10.1")
+    listOf("core", "commands").forEach {
+        modImplementation("net.silkmc:silk-$it:${deps["silk"]}")
+        include("net.silkmc:silk-$it:${deps["silk"]}")
+    }
 }
 
 loom {
+    accessWidenerPath = file("src/main/resources/hatsmod.accesswidener")
+
     decompilers {
         get("vineflower").apply { // Adds names to lambdas - useful for mixins
             options.put("mark-corresponding-synthetics", "1")
         }
     }
-
-    runConfigs.all {
-        ideConfigGenerated(stonecutter.current.isActive)
-        vmArgs("-Dmixin.debug.export=true")
-        runDir = "../../run"
-    }
 }
 
 java {
     withSourcesJar()
-    val java = if (stonecutter.compare(mcVersion, "1.20.6") >= 0) JavaVersion.VERSION_21 else JavaVersion.VERSION_17
-    targetCompatibility = java
-    sourceCompatibility = java
+    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_21
 }
 
 tasks.processResources {
     inputs.property("id", mod.id)
     inputs.property("name", mod.name)
     inputs.property("version", mod.version)
-    inputs.property("mcdep", mcDep)
+    inputs.property("mcdep", mcVersion)
 
     val map = mapOf(
         "id" to mod.id,
         "name" to mod.name,
         "version" to mod.version,
-        "mcdep" to mcDep
+        "mcdep" to mcVersion
     )
 
     filesMatching("fabric.mod.json") { expand(map) }
 }
-
-tasks.register<Copy>("buildAndCollect") {
-    group = "build"
-    from(tasks.remapJar.get().archiveFile)
-    into(rootProject.layout.buildDirectory.file("libs/${mod.version}"))
-    dependsOn("build")
-}
-
-/*
-publishMods {
-    file = tasks.remapJar.get().archiveFile
-    additionalFiles.from(tasks.remapSourcesJar.get().archiveFile)
-    displayName = "${mod.name} ${mod.version} for $mcVersion"
-    version = mod.version
-    changelog = rootProject.file("CHANGELOG.md").readText()
-    type = STABLE
-    modLoaders.add("fabric")
-
-    dryRun = providers.environmentVariable("MODRINTH_TOKEN")
-        .getOrNull() == null || providers.environmentVariable("CURSEFORGE_TOKEN").getOrNull() == null
-
-    modrinth {
-        projectId = property("publish.modrinth").toString()
-        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
-        minecraftVersions.add(mcVersion)
-        requires {
-            slug = "fabric-api"
-        }
-    }
-
-    curseforge {
-        projectId = property("publish.curseforge").toString()
-        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
-        minecraftVersions.add(mcVersion)
-        requires {
-            slug = "fabric-api"
-        }
-    }
-}
-*/
-/*
-publishing {
-    repositories {
-        maven("...") {
-            name = "..."
-            credentials(PasswordCredentials::class.java)
-            authentication {
-                create<BasicAuthentication>("basic")
-            }
-        }
-    }
-
-    publications {
-        create<MavenPublication>("mavenJava") {
-            groupId = "${property("mod.group")}.${mod.id}"
-            artifactId = mod.version
-            version = mcVersion
-
-            from(components["java"])
-        }
-    }
-}
-*/

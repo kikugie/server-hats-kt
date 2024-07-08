@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "dev.kikugie.serverhats.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ArmorSlotMixin",
+    "ArmorStandEntityMixin",
+    "DispenserBlockMixin",
+    "MobEntityMixin",
+    "PlayerScreenHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
