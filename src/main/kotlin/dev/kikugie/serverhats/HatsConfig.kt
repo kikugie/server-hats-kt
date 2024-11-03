@@ -20,6 +20,7 @@ class HatsConfig {
     var dispenserEquipping = true
     var mobsCanEquipHats = false
     var allowAllItems = false
+    var invertAllowList = false
     val allowedItems: MutableSet<String> = mutableSetOf(
         "#banners",
         "#beds",
