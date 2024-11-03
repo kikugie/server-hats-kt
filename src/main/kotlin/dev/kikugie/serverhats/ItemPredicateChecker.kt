@@ -10,7 +10,7 @@ data class ItemPredicateChecker(
 ) {
     fun check(stack: ItemStack): Boolean = when {
         HatsMod.config.allowAllItems -> true
-        stack.item in items -> true
-        else -> tags.any { stack.`is`(it) }
+        stack.item in items -> HatsMod.config.invertAllowList.xor(true)
+        else -> HatsMod.config.invertAllowList.xor(tags.any { stack.`is`(it) })
     }
 }
